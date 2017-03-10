@@ -4,7 +4,7 @@ import sys
 
 from fibo import fib
 
-SERVER_ADDRESS = ('localhost', 10000)
+SERVER_ADDRESS = ('192.168.33.10', 10000)
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -17,14 +17,6 @@ log = logging.getLogger('main')
 event_loop = asyncio.get_event_loop()
 
 
-def int_to_bytes(x):
-    return x.to_bytes((x.bit_length() + 7) // 8, 'big')
-
-
-def int_from_bytes(xbytes):
-    return int.from_bytes(xbytes, 'big')
-
-
 class FiboServer(asyncio.Protocol):
 
     def connection_made(self, transport):
@@ -34,10 +26,15 @@ class FiboServer(asyncio.Protocol):
         self.log.info('Connection accepted')
 
     def data_received(self, data):
-        self.log.debug('Received: {}'.format(int_from_bytes(data)))
+        self.log.debug('Received: {}'.format(data))
+        if not data.strip():
+            return
         try:
-            result = fib(int_from_bytes(data))
-            self.transport.write(int_to_bytes(result))
+            digits = data.split(b' ')
+            result = [fib(int(digit)) for digit in digits if digit.isdigit()]
+            for digit in result:
+                self.transport.write(str(digit).encode('utf8'))
+                self.transport.write(b'\n')
             self.log.debug('Sent: {}'.format(result))
         except TypeError as e:
             error_message = 'Can`t convert received data to int!'
