@@ -3,9 +3,9 @@ import functools
 import logging
 import sys
 
-MESSAGES = [1, 5]
+MESSAGES = [1, 5, 10, 15, 30]
 
-SERVER_ADDRESS = ('localhost', 10000)
+SERVER_ADDRESS = ('192.168.33.10', 10000)
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -15,13 +15,6 @@ logging.basicConfig(
 log = logging.getLogger('main')
 
 event_loop = asyncio.get_event_loop()
-
-
-def int_to_bytes(x):
-    return x.to_bytes((x.bit_length() + 7) // 8, 'big')
-
-def int_from_bytes(xbytes):
-    return int.from_bytes(xbytes, 'big')
 
 
 class FiboClient(asyncio.Protocol):
@@ -42,13 +35,14 @@ class FiboClient(asyncio.Protocol):
         # would make it harder to show each part of the message
         # being sent.
         for msg in self.messages:
-            transport.write(int_to_bytes(msg))
+            transport.write(str(msg).encode('utf8'))
+            transport.write(b' ')
             self.log.debug('Sending {!r}'.format(msg))
         if transport.can_write_eof():
             transport.write_eof()
 
     def data_received(self, data):
-        self.log.info('Received {!r}'.format(int_from_bytes(data)))
+        self.log.info('Received {!r}'.format(data))
 
     def eof_received(self):
         self.log.debug('Received EOF')
